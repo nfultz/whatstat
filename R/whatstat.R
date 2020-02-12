@@ -43,7 +43,12 @@ setMethod("whatstat", c("factor", "factor"), function(y, x, ...) {
   if(nlevels(y) == 2) {
     prop.test(table(x,y), ...)
   } else if(nlevels(y) == 3) {
-    chisq.test(x,y, ...)
+    test <- chisq.test(x,y, ...)
+    if(any(test$expected <= 5)) {
+      message("Expected <= 5, falling back to Fisher's exact test")
+      test <- fisher.test(test$observed, ...)
+    }
+    test
   }
 })
 
