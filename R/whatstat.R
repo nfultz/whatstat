@@ -1,7 +1,16 @@
+# Helper for null hypotheses
+h0 <- function(...) structure(list(...), class='h0')
+setOldClass("h0")
+setClassUnion("NullHypothesis", c("NULL", "h0"))
+
+`%||%` <- function(x,y) if(is.null(x)) y else x
+
+
 #' @export
 whatstat <- function(y,x,...) {
   standardGeneric("whatstat")
 }
+
 
 setMethod("whatstat", c("formula", "data.frame"), function(y, x, ...) {
   stopifnot(length(y) == 3)
@@ -11,6 +20,22 @@ setMethod("whatstat", c("formula", "data.frame"), function(y, x, ...) {
   whatstat(frame(3), frame(2), ...)
 
 })
+
+# whatstat(rnorm(50), h0(mu=1))
+setMethod("whatstat", c("numeric", "NullHypothesis"), function(y, x, ...) {
+
+  t.test(y, mu = x$mu %||% 0, ...)
+
+})
+
+# whatstat(rnorm(50), h0(mu=1))
+#setMethod("whatstat", c("ordered", "NullHypothesis"), function(y, x, ...) {
+#  # TODO
+#  wilcox.test(y, mu = x$mu %||% 0, ...)
+#
+#})
+
+
 
 setMethod("whatstat", c("numeric", "factor"), function(y, x, ...) {
   x <- droplevels(x)
@@ -36,13 +61,13 @@ setMethod("whatstat", c("ordered", "factor"), function(y, x, ...) {
 
 
 
-setMethod("whatstat", c("factor", "factor"), function(y, x, ...) {
+setMethod("whatstat", c("factor", "factor"), function(y, x, ..., min_delta=.01) {
   y <- droplevels(y)
   x <- droplevels(x)
 
   if(nlevels(y) == 2) {
     prop.test(table(x,y), ...)
-  } else if(nlevels(y) == 3) {
+  } else if(nlevels(y) > 2) {
     test <- chisq.test(x,y, ...)
     if(any(test$expected <= 5)) {
       message("Expected <= 5, falling back to Fisher's exact test")
