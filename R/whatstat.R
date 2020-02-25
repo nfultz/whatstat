@@ -98,6 +98,12 @@ setMethod("whatstat", c("data.frame", "NULL"), function(y, x, ...) {
 })
 
 
+setMethod("whatstat", c("matrix", "matrix"), function(y, x, ...) {
+  stopifnot(requireNamespace("CCA"))
+  CCA::cc(x, y)
+})
+
+
 
 setMethod("whatstat", c("ANY", "ANY"), function(y, x) {
   if(interactive())browser()
